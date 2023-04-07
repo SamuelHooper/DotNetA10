@@ -1,63 +1,158 @@
-﻿using System;
-using EFTutorial.Models;
+﻿using DotNetA10.Models;
+using Microsoft.IdentityModel.Tokens;
+using System;
 using System.Linq;
 
-namespace EFTutorial
+namespace DotNetA10
 {
     class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
-            // 1. List Posts for Blog #1
-            using (var db = new BlogContext()) 
+            string menuOption;
+
+            do
             {
-                var blog = db.Blogs.Where(x=>x.BlogId == 1).FirstOrDefault();
-                // var blogsList = blog.ToList(); // convert to List from IQueryable
+                Console.WriteLine("\n1) Display Blogs.");
+                Console.WriteLine("2) Add Blog.");
+                Console.WriteLine("3) Display Posts.");
+                Console.WriteLine("4) Add Post.");
+                Console.WriteLine("Enter any other key to exit.\n");
+                menuOption = Console.ReadLine();
+                if (menuOption == "1")
+                {
+                    Console.WriteLine("Blogs:");
+                    DisplayBlogs();
+                }
+                else if (menuOption == "2")
+                {
+                    AddBlog();
+                }
+                else if (menuOption == "3")
+                {
+                    DisplayPosts();
+                }
+                else if (menuOption == "4")
+                {
+                    AddPost();
+                }
+            } while (menuOption == "1" || menuOption == "2" || menuOption == "3" || menuOption == "4");
 
-                System.Console.WriteLine($"Posts for Blog {blog.Name}");
+            Console.WriteLine("Shutting Down...");
+        }
 
-                foreach (var post in blog.Posts) {
-                    System.Console.WriteLine($"\tPost {post.PostId} {post.Title}");
+        private static void DisplayBlogs()
+        {
+            using var db = new BlogContext();
+            foreach (var b in db.Blogs)
+            {
+                Console.WriteLine($"\t{b.BlogId}: {b.Name}");
+            }
+        }
+
+        private static void AddBlog()
+        {
+            string blogName;
+
+            Console.WriteLine("Enter your Blog name:");
+            while (true)
+            {
+                blogName = Console.ReadLine();
+                if (!blogName.IsNullOrEmpty())
+                {
+                    break;
+                }
+                Console.WriteLine("Blog name cannot be null!");
+            }
+
+            var blog = new Blog(blogName);
+            using (var db = new BlogContext())
+            {
+                db.Add(blog);
+                db.SaveChanges();
+            }
+        }
+
+        private static void DisplayPosts()
+        {
+            Console.WriteLine("Enter the Blog Id of the Blog whose posts you wish to view:");
+            var blogId = SelectBlogId();
+
+            using var db = new BlogContext();
+            var blog = db.Blogs.Where(x => x.BlogId == blogId).FirstOrDefault();
+            foreach (var post in blog.Posts)
+            {
+                Console.WriteLine($"{blog.Name} | {post.Title}\n\t{post.Content}");
+            }
+        }
+
+        private static void AddPost()
+        {
+            string postTitle;
+            string postContent;
+
+            Console.WriteLine("Enter the Blog Id of the Blog you wish to add a post to:");
+            var blogId = SelectBlogId();
+
+            Console.WriteLine("Enter your Post title:");
+            while (true)
+            {
+                postTitle = Console.ReadLine();
+                if (!postTitle.IsNullOrEmpty())
+                {
+                    break;
+                }
+                Console.WriteLine("Post name cannot be null!");
+            }
+
+            Console.WriteLine("Enter your Post content:");
+            while (true)
+            {
+                postContent = Console.ReadLine();
+                if (!postContent.IsNullOrEmpty())
+                {
+                    break;
+                }
+                Console.WriteLine("Post content cannot be null!");
+            }
+
+            var post = new Post(postTitle, postContent, blogId);
+
+            using (var db = new BlogContext())
+            {
+                db.Posts.Add(post);
+                db.SaveChanges();
+            }
+        }
+
+        private static int SelectBlogId()
+        {
+            int validBlogId;
+
+            DisplayBlogs();
+            using (var db = new BlogContext())
+            {
+                while (true)
+                {
+                    try
+                    {
+                        validBlogId = int.Parse(Console.ReadLine());
+                        var blog = db.Blogs.Where(blog => blog.BlogId == validBlogId).FirstOrDefault();
+                        if (blog != null)
+                        {
+                            return validBlogId;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Not a valid Blog Id!");
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Not a valid Blog Id!");
+                    }
                 }
             }
-            // 2. Add Post to database
-            // System.Console.WriteLine("Enter your Post title");
-            // var postTitle = Console.ReadLine();
-
-            // var post = new Post();
-            // post.Title = postTitle;
-            // post.BlogId = 1;
-
-            // using (var db = new BlogContext())
-            // {
-            //     db.Posts.Add(post);
-            //     db.SaveChanges();
-            // }
-
-            // 3. Read Blogs from database
-            // using (var db = new BlogContext()) 
-            // {
-            //     System.Console.WriteLine("Here is the list of blogs");
-            //     foreach (var b in db.Blogs) {
-            //         System.Console.WriteLine($"Blog: {b.BlogId}: {b.Name}");
-            //     }
-            // }
-
-            // 4. Add Blog to Database
-            // System.Console.WriteLine("Enter your Blog name");
-            // var blogName = Console.ReadLine();
-
-            // // Create new Blog
-            // var blog = new Blog();
-            // blog.Name = blogName;
-            
-            // // Save blog object to database
-            // using (var db = new BlogContext()) 
-            // {
-            //     db.Add(blog);
-            //     db.SaveChanges();
-            // }
-
         }
     }
 }
